@@ -108,7 +108,7 @@ def add_employee():
         
         # Fetch the newly created employee from the database
         created_employee = conn.execute('SELECT * FROM employees WHERE id = ?', (new_id,)).fetchone()
-
+        
         # Emit a socket event to all clients, including the sender
         socketio.emit('employee_added', dict(created_employee))
         return jsonify(dict(created_employee)), 201
@@ -143,7 +143,7 @@ def update_employee(employee_id):
 
     conn = get_db_connection()
     cursor = conn.cursor()
-
+    
     # Check if employee exists
     existing_employee = cursor.execute('SELECT * FROM employees WHERE id = ?', (employee_id,)).fetchone()
     if not existing_employee:
@@ -157,20 +157,20 @@ def update_employee(employee_id):
         if key in ['first_name', 'last_name', 'email', 'job_title', 'department', 'start_date', 'salary']:
             fields_to_update.append(f"{key} = ?")
             params.append(value)
-
+    
     if not fields_to_update:
         return jsonify({'error': 'No updatable fields provided'}), 400
 
     params.append(employee_id)
-
+    
     try:
         query = f"UPDATE employees SET {', '.join(fields_to_update)} WHERE id = ?"
         cursor.execute(query, params)
         conn.commit()
-
+        
         # Fetch the updated employee data to return
         updated_employee = cursor.execute('SELECT * FROM employees WHERE id = ?', (employee_id,)).fetchone()
-
+        
         # Emit a socket event to all clients, including the sender
         socketio.emit('employee_updated', dict(updated_employee))
         return jsonify(dict(updated_employee))
@@ -186,10 +186,23 @@ def deactivate_employee(employee_id):
     """Deactivates an employee (soft delete)."""
     end_date = datetime.now().strftime('%Y-%m-%d')
     conn = get_db_connection()
+    
+    # First, fetch the employee's data
+    employee = conn.execute('SELECT * FROM employees WHERE id = ?', (employee_id,)).fetchone()
+    if employee is None:
+        return jsonify({'error': 'Employee not found'}), 404
+        
+    # Then, update the employee's status
     conn.execute("UPDATE employees SET is_active = 0, end_date = ? WHERE id = ?", (end_date, employee_id))
     conn.commit()
-    socketio.emit('employee_deactivated', {'id': employee_id})
-    return jsonify({'message': f'Employee {employee_id} deactivated'})
+    
+    # Get the updated employee record
+    deactivated_employee = conn.execute('SELECT * FROM employees WHERE id = ?', (employee_id,)).fetchone()
+    
+    # Emit the deactivated employee's data
+    socketio.emit('employee_deactivated', dict(deactivated_employee))
+    
+    return jsonify(dict(deactivated_employee))
 
 @api_bp.route('/dashboard/kpis', methods=['GET'])
 def get_kpis():

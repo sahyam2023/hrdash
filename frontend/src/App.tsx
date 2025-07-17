@@ -11,13 +11,14 @@ import { SocketProvider, useSocket } from './context/SocketContext';
 import { initializeSocketListeners } from './listeners/socketListeners';
 
 function AppContent() {
-  const socket = useSocket();
+  const { socket } = useSocket();
 
   useEffect(() => {
     if (socket) {
-      initializeSocketListeners(socket);
+      const cleanupListeners = initializeSocketListeners(socket);
+      return cleanupListeners;
     }
-  }, [socket]);
+  }, [socket]); // The effect depends on the socket object.
 
   return (
     <motion.div

@@ -7,7 +7,7 @@ interface EmployeeModalProps {
   isOpen: boolean;
   onClose: () => void;
   employee: Employee | null;
-  onSave: (employee: Omit<Employee, 'id'>) => Promise<Employee>;
+  onSave: (employee: Omit<Employee, 'id'>) => Promise<void>;
 }
 
 const EmployeeModal: React.FC<EmployeeModalProps> = ({

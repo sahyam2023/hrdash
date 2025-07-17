@@ -41,19 +41,6 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       setIsConnected(false);
       toast.error('Disconnected from real-time updates');
     });
-
-    newSocket.on('employee_added', (data) => {
-      toast.success(`New employee added: ${data.name}`);
-    });
-
-    newSocket.on('employee_updated', (data) => {
-      toast.success(`Employee updated: ${data.name}`);
-    });
-
-    newSocket.on('employee_deactivated', (data) => {
-      toast.success(`Employee deactivated: ${data.name}`);
-    });
-
     return () => {
       newSocket.close();
     };

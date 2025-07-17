@@ -5,7 +5,6 @@ import EmployeeTable from '../components/EmployeeTable';
 import EmployeeModal from '../components/EmployeeModal';
 import { Employee, employeeAPI } from '../services/api';
 import { useDebounce } from '../hooks/useDebounce';
-import toast from 'react-hot-toast';
 
 const Employees: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -47,20 +46,18 @@ const Employees: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleSaveEmployee = async (employeeData: Omit<Employee, 'id'>): Promise<Employee> => {
+  const handleSaveEmployee = async (employeeData: Omit<Employee, 'id'>) => {
     try {
-      const isUpdating = !!selectedEmployee;
-      const promise = isUpdating
-        ? employeeAPI.updateEmployee(selectedEmployee.id, employeeData)
-        : employeeAPI.createEmployee(employeeData);
-
-      const response = await promise;
-
-      fetchEmployees();
+      if (selectedEmployee) {
+        await employeeAPI.updateEmployee(selectedEmployee.id, employeeData);
+      } else {
+        await employeeAPI.createEmployee(employeeData);
+      }
+      fetchEmployees(); // Refresh data
       setIsModalOpen(false);
-      return response.data;
     } catch (error) {
       console.error("Failed to save employee:", error);
+      // Re-throw the error to be caught by the modal's handleSubmit
       throw error;
     }
   };
