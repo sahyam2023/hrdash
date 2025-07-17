@@ -83,4 +83,9 @@ export const employeeAPI = {
     api.put<Employee>(`/api/employees/${id}/deactivate`),
 };
 
+export const settingsAPI = {
+  getDepartments: () => api.get<any[]>('/api/departments'),
+  getJobTitles: () => api.get<any[]>('/api/job-titles'),
+};
+
 export default api;

@@ -89,12 +89,12 @@ const JobTitleList: React.FC = () => {
               animate="visible"
               exit="exit"
               layout
-              className="flex justify-between items-center bg-background-secondary p-3 rounded-lg"
+              className="flex justify-between items-center bg-background-secondary p-3 rounded-lg table-hover"
             >
               <span className="text-text-primary font-medium">{job.name}</span>
               <button
                 onClick={() => deleteJobTitle(job.id)}
-                className="text-text-muted hover:text-red-500 transition-colors"
+                className="p-2 text-text-secondary hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all duration-200"
               >
                 <Trash2 className="w-5 h-5" />
               </button>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, User, Mail, Building, Briefcase, Calendar } from 'lucide-react';
-import { Employee } from '../services/api';
+import { Employee, settingsAPI } from '../services/api';
 
 interface EmployeeModalProps {
   isOpen: boolean;
@@ -26,15 +26,15 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
     is_active: true,
     salary: 0,
   });
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [jobTitles, setJobTitles] = useState<any[]>([]);
 
-  const departments = [
-    'Engineering',
-    'Sales',
-    'Marketing',
-    'HR',
-    'Finance',
-    'Operations',
-  ];
+  useEffect(() => {
+    if (isOpen) {
+      settingsAPI.getDepartments().then(res => setDepartments(res.data));
+      settingsAPI.getJobTitles().then(res => setJobTitles(res.data));
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (employee) {
@@ -62,9 +62,20 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
     }
   }, [employee]);
 
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSave(formData);
+    setErrorMessage(null);
+    try {
+      await onSave(formData);
+    } catch (error: any) {
+      if (error.response && error.response.status === 409) {
+        setErrorMessage(error.response.data.error);
+      } else {
+        setErrorMessage('An unexpected error occurred. Please try again.');
+      }
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -100,6 +111,12 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
                 <X className="w-5 h-5" />
               </button>
             </div>
+
+              {errorMessage && (
+                <div className="bg-red-500/20 text-red-400 p-3 rounded-lg mb-4">
+                  {errorMessage}
+                </div>
+              )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -181,7 +198,7 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
                 >
                   <option value="">Select department</option>
                   {departments.map(dept => (
-                    <option key={dept} value={dept}>{dept}</option>
+                    <option key={dept.id} value={dept.name}>{dept.name}</option>
                   ))}
                 </select>
               </div>
@@ -191,15 +208,18 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
                   <Briefcase className="w-4 h-4 inline mr-2" />
                   Job Title
                 </label>
-                <input
-                  type="text"
+                <select
                   name="job_title"
                   value={formData.job_title}
                   onChange={handleChange}
                   required
                   className="input-field w-full"
-                  placeholder="Enter job title"
-                />
+                >
+                  <option value="">Select job title</option>
+                  {jobTitles.map(job => (
+                    <option key={job.id} value={job.name}>{job.name}</option>
+                  ))}
+                </select>
               </div>
 
               <div>
