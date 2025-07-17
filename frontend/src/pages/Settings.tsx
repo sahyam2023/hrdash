@@ -1,5 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import DepartmentList from '../components/DepartmentList';
+import JobTitleList from '../components/JobTitleList';
 
 const Settings: React.FC = () => {
   return (
@@ -25,7 +27,7 @@ const Settings: React.FC = () => {
         className="bg-background-tertiary rounded-xl p-6 border border-white/10"
       >
         <h2 className="text-xl font-semibold text-text-primary mb-4">Departments</h2>
-        {/* Department management UI will go here */}
+        <DepartmentList />
       </motion.div>
 
       <motion.div
@@ -35,7 +37,7 @@ const Settings: React.FC = () => {
         className="bg-background-tertiary rounded-xl p-6 border border-white/10"
       >
         <h2 className="text-xl font-semibold text-text-primary mb-4">Job Titles</h2>
-        {/* Job title management UI will go here */}
+        <JobTitleList />
       </motion.div>
     </motion.div>
   );

@@ -36,6 +36,7 @@ export interface Employee {
   start_date: string;
   end_date?: string;
   is_active: boolean;
+  salary: number;
 }
 
 export interface KPIData {

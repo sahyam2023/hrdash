@@ -88,7 +88,7 @@ def get_employees():
 def add_employee():
     """Adds a new employee with validation."""
     data = request.get_json()
-    required_fields = ['first_name', 'last_name', 'email', 'job_title', 'department', 'start_date']
+    required_fields = ['first_name', 'last_name', 'email', 'job_title', 'department', 'start_date', 'salary']
     
     if not data or not all(field in data for field in required_fields):
         return jsonify({'error': 'Missing required fields'}), 400
@@ -100,8 +100,8 @@ def add_employee():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO employees (first_name, last_name, email, job_title, department, start_date) VALUES (?, ?, ?, ?, ?, ?)",
-                       (data['first_name'], data['last_name'], data['email'], data['job_title'], data['department'], data['start_date']))
+        cursor.execute("INSERT INTO employees (first_name, last_name, email, job_title, department, start_date, salary) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                       (data['first_name'], data['last_name'], data['email'], data['job_title'], data['department'], data['start_date'], data['salary']))
         conn.commit()
         new_id = cursor.lastrowid
         conn.close()
@@ -132,8 +132,8 @@ def update_employee(employee_id):
     """Updates an existing employee's details."""
     data = request.get_json()
     conn = get_db_connection()
-    conn.execute("UPDATE employees SET first_name = ?, last_name = ?, email = ?, job_title = ?, department = ? WHERE id = ?",
-                 (data['first_name'], data['last_name'], data['email'], data['job_title'], data['department'], employee_id))
+    conn.execute("UPDATE employees SET first_name = ?, last_name = ?, email = ?, job_title = ?, department = ?, salary = ? WHERE id = ?",
+                 (data['first_name'], data['last_name'], data['email'], data['job_title'], data['department'], data['salary'], employee_id))
     conn.commit()
     conn.close()
     socketio.emit('employee_updated', {'id': employee_id})
@@ -280,3 +280,32 @@ def handle_connect():
 def handle_disconnect():
     """Triggered when a client disconnects."""
     print(f"Client disconnected: {request.sid}")
+
+@api_bp.route('/analytics/salary-distribution', methods=['GET'])
+def get_salary_distribution():
+    """Returns salary distribution data."""
+    conn = get_db_connection()
+    # Define salary ranges
+    ranges = [
+        (0, 50000),
+        (50001, 75000),
+        (75001, 100000),
+        (100001, 150000),
+        (150001, 9999999)
+    ]
+
+    results = []
+    for r in ranges:
+        count = conn.execute(
+            "SELECT COUNT(*) FROM employees WHERE salary BETWEEN ? AND ? AND is_active = 1",
+            (r[0], r[1])
+        ).fetchone()[0]
+
+        range_label = f"${r[0]/1000:.0f}k-${r[1]/1000:.0f}k"
+        if r[1] > 200000:
+            range_label = f">${r[0]/1000:.0f}k"
+
+        results.append({"range": range_label, "count": count})
+
+    conn.close()
+    return jsonify(results)

@@ -30,7 +30,8 @@ def create_database_table():
             department TEXT NOT NULL,
             start_date TEXT NOT NULL,
             end_date TEXT,
-            is_active BOOLEAN NOT NULL DEFAULT 1
+            is_active BOOLEAN NOT NULL DEFAULT 1,
+            salary REAL NOT NULL DEFAULT 0
         )
     """)
     cursor.execute("""

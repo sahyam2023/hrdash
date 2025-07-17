@@ -24,6 +24,7 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
     job_title: '',
     start_date: '',
     is_active: true,
+    salary: 0,
   });
 
   const departments = [
@@ -45,6 +46,7 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
         job_title: employee.job_title,
         start_date: employee.start_date,
         is_active: employee.is_active,
+        salary: employee.salary,
       });
     } else {
       setFormData({
@@ -55,6 +57,7 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
         job_title: '',
         start_date: new Date().toISOString().split('T')[0],
         is_active: true,
+        salary: 0,
       });
     }
   }, [employee]);
@@ -130,6 +133,22 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
                     placeholder="Enter last name"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-text-primary font-medium mb-2">
+                  <Briefcase className="w-4 h-4 inline mr-2" />
+                  Salary
+                </label>
+                <input
+                  type="number"
+                  name="salary"
+                  value={formData.salary}
+                  onChange={handleChange}
+                  required
+                  className="input-field w-full"
+                  placeholder="Enter salary"
+                />
               </div>
 
               <div>
