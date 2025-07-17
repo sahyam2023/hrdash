@@ -169,6 +169,103 @@ def get_department_breakdown():
     conn.close()
     return jsonify([dict(row) for row in breakdown])
 
+@api_bp.route('/departments', methods=['GET'])
+def get_departments():
+    """Fetches all departments."""
+    conn = get_db_connection()
+    departments = conn.execute("SELECT * FROM departments").fetchall()
+    conn.close()
+    return jsonify([dict(row) for row in departments])
+
+@api_bp.route('/departments', methods=['POST'])
+def add_department():
+    """Adds a new department."""
+    data = request.get_json()
+    if not data or 'name' not in data:
+        return jsonify({'error': 'Missing name field'}), 400
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO departments (name) VALUES (?)", (data['name'],))
+        conn.commit()
+        new_id = cursor.lastrowid
+        conn.close()
+        return jsonify({'id': new_id, 'name': data['name']}), 201
+    except sqlite3.IntegrityError:
+        return jsonify({'error': 'Department already exists'}), 409
+
+@api_bp.route('/departments/<int:department_id>', methods=['DELETE'])
+def delete_department(department_id):
+    """Deletes a department."""
+    conn = get_db_connection()
+    conn.execute("DELETE FROM departments WHERE id = ?", (department_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({'message': 'Department deleted successfully'})
+
+@api_bp.route('/job-titles', methods=['GET'])
+def get_job_titles():
+    """Fetches all job titles."""
+    conn = get_db_connection()
+    job_titles = conn.execute("SELECT * FROM job_titles").fetchall()
+    conn.close()
+    return jsonify([dict(row) for row in job_titles])
+
+@api_bp.route('/job-titles', methods=['POST'])
+def add_job_title():
+    """Adds a new job title."""
+    data = request.get_json()
+    if not data or 'name' not in data:
+        return jsonify({'error': 'Missing name field'}), 400
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO job_titles (name) VALUES (?)", (data['name'],))
+        conn.commit()
+        new_id = cursor.lastrowid
+        conn.close()
+        return jsonify({'id': new_id, 'name': data['name']}), 201
+    except sqlite3.IntegrityError:
+        return jsonify({'error': 'Job title already exists'}), 409
+
+@api_bp.route('/job-titles/<int:job_title_id>', methods=['DELETE'])
+def delete_job_title(job_title_id):
+    """Deletes a job title."""
+    conn = get_db_connection()
+    conn.execute("DELETE FROM job_titles WHERE id = ?", (job_title_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({'message': 'Job title deleted successfully'})
+
+@api_bp.route('/analytics/turnover', methods=['GET'])
+def get_turnover_data():
+    """Calculates and returns employee turnover data."""
+    conn = get_db_connection()
+
+    # Get monthly hires
+    hires = conn.execute("""
+        SELECT strftime('%Y-%m', start_date) as month, COUNT(id) as count
+        FROM employees
+        GROUP BY month
+        ORDER BY month
+    """).fetchall()
+
+    # Get monthly departures
+    departures = conn.execute("""
+        SELECT strftime('%Y-%m', end_date) as month, COUNT(id) as count
+        FROM employees
+        WHERE is_active = 0 AND end_date IS NOT NULL
+        GROUP BY month
+        ORDER BY month
+    """).fetchall()
+
+    conn.close()
+
+    return jsonify({
+        'hires': [dict(row) for row in hires],
+        'departures': [dict(row) for row in departures]
+    })
+
 # ===================================================================
 # 2. SOCKET.IO REAL-TIME EVENT HANDLERS
 # ===================================================================
