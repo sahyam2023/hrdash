@@ -5,6 +5,7 @@ import EmployeeTable from '../components/EmployeeTable';
 import EmployeeModal from '../components/EmployeeModal';
 import { Employee, employeeAPI } from '../services/api';
 import { useDebounce } from '../hooks/useDebounce';
+import toast from 'react-hot-toast';
 
 const Employees: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -48,24 +49,18 @@ const Employees: React.FC = () => {
 
   const handleSaveEmployee = async (employeeData: Omit<Employee, 'id'>): Promise<Employee> => {
     try {
-      let savedEmployee;
-      if (selectedEmployee) {
-        const response = await employeeAPI.updateEmployee(selectedEmployee.id, employeeData);
-        savedEmployee = response.data;
-        // Optionally, show a success toast/notification
-        alert(`Employee updated: ${savedEmployee.first_name} ${savedEmployee.last_name}`);
-      } else {
-        const response = await employeeAPI.createEmployee(employeeData);
-        savedEmployee = response.data;
-        // Optionally, show a success toast/notification
-        alert(`Employee added: ${savedEmployee.first_name} ${savedEmployee.last_name}`);
-      }
-      fetchEmployees(); // Refresh data
+      const isUpdating = !!selectedEmployee;
+      const promise = isUpdating
+        ? employeeAPI.updateEmployee(selectedEmployee.id, employeeData)
+        : employeeAPI.createEmployee(employeeData);
+
+      const response = await promise;
+
+      fetchEmployees();
       setIsModalOpen(false);
-      return savedEmployee;
+      return response.data;
     } catch (error) {
       console.error("Failed to save employee:", error);
-      // Re-throw the error to be caught by the modal's handleSubmit
       throw error;
     }
   };
