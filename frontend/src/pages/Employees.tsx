@@ -46,17 +46,27 @@ const Employees: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleSaveEmployee = async (employeeData: Omit<Employee, 'id'>) => {
+  const handleSaveEmployee = async (employeeData: Omit<Employee, 'id'>): Promise<Employee> => {
     try {
+      let savedEmployee;
       if (selectedEmployee) {
-        await employeeAPI.updateEmployee(selectedEmployee.id, employeeData);
+        const response = await employeeAPI.updateEmployee(selectedEmployee.id, employeeData);
+        savedEmployee = response.data;
+        // Optionally, show a success toast/notification
+        alert(`Employee updated: ${savedEmployee.first_name} ${savedEmployee.last_name}`);
       } else {
-        await employeeAPI.createEmployee(employeeData);
+        const response = await employeeAPI.createEmployee(employeeData);
+        savedEmployee = response.data;
+        // Optionally, show a success toast/notification
+        alert(`Employee added: ${savedEmployee.first_name} ${savedEmployee.last_name}`);
       }
       fetchEmployees(); // Refresh data
       setIsModalOpen(false);
+      return savedEmployee;
     } catch (error) {
       console.error("Failed to save employee:", error);
+      // Re-throw the error to be caught by the modal's handleSubmit
+      throw error;
     }
   };
 

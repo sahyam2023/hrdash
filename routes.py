@@ -104,10 +104,12 @@ def add_employee():
         conn.commit()
         new_id = cursor.lastrowid
         
-        created_employee = {**data, "id": new_id, "is_active": 1}
+        # Fetch the newly created employee from the database
+        created_employee = conn.execute('SELECT * FROM employees WHERE id = ?', (new_id,)).fetchone()
+
         # Emit a socket event to notify all connected clients
-        socketio.emit('employee_added', created_employee)
-        return jsonify(created_employee), 201
+        socketio.emit('employee_added', dict(created_employee))
+        return jsonify(dict(created_employee)), 201
         
     except sqlite3.IntegrityError:
         return jsonify({'error': 'An employee with this email already exists'}), 409
@@ -128,12 +130,54 @@ def get_employee(employee_id):
 def update_employee(employee_id):
     """Updates an existing employee's details."""
     data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+
+    # Basic validation
+    if 'email' in data and not is_valid_email(data['email']):
+        return jsonify({'error': 'Invalid email format'}), 400
+    if 'start_date' in data and not is_valid_date(data['start_date']):
+        return jsonify({'error': 'Invalid date format for start_date. Use YYYY-MM-DD.'}), 400
+
     conn = get_db_connection()
-    conn.execute("UPDATE employees SET first_name = ?, last_name = ?, email = ?, job_title = ?, department = ?, salary = ? WHERE id = ?",
-                 (data['first_name'], data['last_name'], data['email'], data['job_title'], data['department'], data['salary'], employee_id))
-    conn.commit()
-    socketio.emit('employee_updated', {'id': employee_id})
-    return jsonify({'message': 'Employee updated successfully'})
+    cursor = conn.cursor()
+
+    # Check if employee exists
+    existing_employee = cursor.execute('SELECT * FROM employees WHERE id = ?', (employee_id,)).fetchone()
+    if not existing_employee:
+        return jsonify({'error': 'Employee not found'}), 404
+
+    # Dynamically build the UPDATE query based on the fields provided in the request
+    fields_to_update = []
+    params = []
+    for key, value in data.items():
+        # Ensure only valid columns are updated
+        if key in ['first_name', 'last_name', 'email', 'job_title', 'department', 'start_date', 'salary']:
+            fields_to_update.append(f"{key} = ?")
+            params.append(value)
+
+    if not fields_to_update:
+        return jsonify({'error': 'No updatable fields provided'}), 400
+
+    params.append(employee_id)
+
+    try:
+        query = f"UPDATE employees SET {', '.join(fields_to_update)} WHERE id = ?"
+        cursor.execute(query, params)
+        conn.commit()
+
+        # Fetch the updated employee data to return
+        updated_employee = cursor.execute('SELECT * FROM employees WHERE id = ?', (employee_id,)).fetchone()
+
+        # Emit a socket event to notify all connected clients
+        socketio.emit('employee_updated', dict(updated_employee))
+        return jsonify(dict(updated_employee))
+
+    except sqlite3.IntegrityError:
+        return jsonify({'error': 'An employee with this email already exists'}), 409
+    except Exception as e:
+        current_app.logger.error(f"Error updating employee {employee_id}: {e}")
+        return jsonify({'error': 'An internal server error occurred'}), 500
 
 @api_bp.route('/employees/<int:employee_id>/deactivate', methods=['PUT'])
 def deactivate_employee(employee_id):
