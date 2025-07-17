@@ -138,7 +138,7 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
               <div>
                 <label className="block text-text-primary font-medium mb-2">
                   <Briefcase className="w-4 h-4 inline mr-2" />
-                  Salary
+                  Salary (₹)
                 </label>
                 <input
                   type="number"
@@ -147,7 +147,7 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
                   onChange={handleChange}
                   required
                   className="input-field w-full"
-                  placeholder="Enter salary"
+                  placeholder="Enter salary in Rupees"
                 />
               </div>
 

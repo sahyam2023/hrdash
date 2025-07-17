@@ -190,7 +190,9 @@ def add_department():
         conn.commit()
         new_id = cursor.lastrowid
         conn.close()
-        return jsonify({'id': new_id, 'name': data['name']}), 201
+        new_department = {'id': new_id, 'name': data['name']}
+        socketio.emit('department_added', new_department)
+        return jsonify(new_department), 201
     except sqlite3.IntegrityError:
         return jsonify({'error': 'Department already exists'}), 409
 
@@ -201,6 +203,7 @@ def delete_department(department_id):
     conn.execute("DELETE FROM departments WHERE id = ?", (department_id,))
     conn.commit()
     conn.close()
+    socketio.emit('department_deleted', {'id': department_id})
     return jsonify({'message': 'Department deleted successfully'})
 
 @api_bp.route('/job-titles', methods=['GET'])
@@ -224,7 +227,9 @@ def add_job_title():
         conn.commit()
         new_id = cursor.lastrowid
         conn.close()
-        return jsonify({'id': new_id, 'name': data['name']}), 201
+        new_job_title = {'id': new_id, 'name': data['name']}
+        socketio.emit('job_title_added', new_job_title)
+        return jsonify(new_job_title), 201
     except sqlite3.IntegrityError:
         return jsonify({'error': 'Job title already exists'}), 409
 
@@ -235,6 +240,7 @@ def delete_job_title(job_title_id):
     conn.execute("DELETE FROM job_titles WHERE id = ?", (job_title_id,))
     conn.commit()
     conn.close()
+    socketio.emit('job_title_deleted', {'id': job_title_id})
     return jsonify({'message': 'Job title deleted successfully'})
 
 @api_bp.route('/analytics/turnover', methods=['GET'])
@@ -283,15 +289,15 @@ def handle_disconnect():
 
 @api_bp.route('/analytics/salary-distribution', methods=['GET'])
 def get_salary_distribution():
-    """Returns salary distribution data."""
+    """Returns salary distribution data in Rupees."""
     conn = get_db_connection()
-    # Define salary ranges
+    # Define salary ranges in Rupees
     ranges = [
-        (0, 50000),
-        (50001, 75000),
-        (75001, 100000),
-        (100001, 150000),
-        (150001, 9999999)
+        (0, 300000),
+        (300001, 600000),
+        (600001, 1000000),
+        (1000001, 1500000),
+        (1500001, 99999999)
     ]
 
     results = []
@@ -301,9 +307,10 @@ def get_salary_distribution():
             (r[0], r[1])
         ).fetchone()[0]
 
-        range_label = f"${r[0]/1000:.0f}k-${r[1]/1000:.0f}k"
-        if r[1] > 200000:
-            range_label = f">${r[0]/1000:.0f}k"
+        if r[1] > 2000000:
+            range_label = f"₹{r[0]/100000:.1f}L+"
+        else:
+            range_label = f"₹{r[0]/100000:.1f}L - ₹{r[1]/100000:.1f}L"
 
         results.append({"range": range_label, "count": count})
 
