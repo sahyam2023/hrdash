@@ -61,9 +61,19 @@ export const dashboardAPI = {
   getDepartmentBreakdown: () => api.get<DepartmentBreakdown[]>('/api/dashboard/department-breakdown'),
 };
 
+export interface PaginatedEmployees {
+  data: Employee[];
+  pagination: {
+    totalRecords: number;
+    currentPage: number;
+    totalPages: number;
+    limit: number;
+  };
+}
+
 export const employeeAPI = {
-  getEmployees: (params?: { search?: string; page?: number; limit?: number }) => 
-    api.get<Employee[]>('/api/employees', { params }),
+  getEmployees: (params?: { search?: string; page?: number; limit?: number; department?: string }) => 
+    api.get<PaginatedEmployees>('/api/employees', { params }),
   createEmployee: (data: Omit<Employee, 'id'>) => 
     api.post<Employee>('/api/employees', data),
   updateEmployee: (id: number, data: Partial<Employee>) => 

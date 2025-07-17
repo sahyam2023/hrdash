@@ -7,7 +7,7 @@ interface EmployeeModalProps {
   isOpen: boolean;
   onClose: () => void;
   employee: Employee | null;
-  onSave: (employee: Omit<Employee, 'id' | 'is_active' | 'end_date'>) => void;
+  onSave: (employee: Omit<Employee, 'id'>) => Promise<void>;
 }
 
 const EmployeeModal: React.FC<EmployeeModalProps> = ({
@@ -16,13 +16,14 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
   employee,
   onSave,
 }) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<Omit<Employee, 'id'>>({
     first_name: '',
     last_name: '',
     email: '',
     department: '',
     job_title: '',
     start_date: '',
+    is_active: true,
   });
 
   const departments = [
@@ -43,6 +44,7 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
         department: employee.department,
         job_title: employee.job_title,
         start_date: employee.start_date,
+        is_active: employee.is_active,
       });
     } else {
       setFormData({
@@ -52,13 +54,14 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
         department: '',
         job_title: '',
         start_date: new Date().toISOString().split('T')[0],
+        is_active: true,
       });
     }
   }, [employee]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    await onSave(formData);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
