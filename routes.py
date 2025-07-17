@@ -100,8 +100,8 @@ def add_employee():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO employees (first_name, last_name, email, job_title, department, start_date, salary) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                       (data['first_name'], data['last_name'], data['email'], data['job_title'], data['department'], data['start_date'], data['salary']))
+        cursor.execute("INSERT INTO employees (first_name, last_name, email, job_title, department, start_date, salary, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                       (data['first_name'], data['last_name'], data['email'], data['job_title'], data['department'], data['start_date'], data['salary'], data.get('is_active', 1)))
         conn.commit()
         new_id = cursor.lastrowid
         conn.close()
