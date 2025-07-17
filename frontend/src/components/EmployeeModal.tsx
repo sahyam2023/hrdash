@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User, Mail, Building, Briefcase, DollarSign, Calendar } from 'lucide-react';
+import { X, User, Mail, Building, Briefcase, Calendar } from 'lucide-react';
 import { Employee } from '../services/api';
 
 interface EmployeeModalProps {
   isOpen: boolean;
   onClose: () => void;
   employee: Employee | null;
-  onSave: (employee: Omit<Employee, 'id'>) => void;
+  onSave: (employee: Omit<Employee, 'id' | 'is_active' | 'end_date'>) => void;
 }
 
 const EmployeeModal: React.FC<EmployeeModalProps> = ({
@@ -17,13 +17,12 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
   onSave,
 }) => {
   const [formData, setFormData] = useState({
-    name: '',
+    first_name: '',
+    last_name: '',
     email: '',
     department: '',
-    position: '',
-    salary: 0,
-    hire_date: '',
-    is_active: true,
+    job_title: '',
+    start_date: '',
   });
 
   const departments = [
@@ -38,23 +37,21 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
   useEffect(() => {
     if (employee) {
       setFormData({
-        name: employee.name,
+        first_name: employee.first_name,
+        last_name: employee.last_name,
         email: employee.email,
         department: employee.department,
-        position: employee.position,
-        salary: employee.salary,
-        hire_date: employee.hire_date,
-        is_active: employee.is_active,
+        job_title: employee.job_title,
+        start_date: employee.start_date,
       });
     } else {
       setFormData({
-        name: '',
+        first_name: '',
+        last_name: '',
         email: '',
         department: '',
-        position: '',
-        salary: 0,
-        hire_date: new Date().toISOString().split('T')[0],
-        is_active: true,
+        job_title: '',
+        start_date: new Date().toISOString().split('T')[0],
       });
     }
   }, [employee]);
@@ -65,11 +62,8 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'number' ? Number(value) : value,
-    }));
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   return (
@@ -102,20 +96,37 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-text-primary font-medium mb-2">
-                  <User className="w-4 h-4 inline mr-2" />
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  className="input-field w-full"
-                  placeholder="Enter full name"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-text-primary font-medium mb-2">
+                    <User className="w-4 h-4 inline mr-2" />
+                    First Name
+                  </label>
+                  <input
+                    type="text"
+                    name="first_name"
+                    value={formData.first_name}
+                    onChange={handleChange}
+                    required
+                    className="input-field w-full"
+                    placeholder="Enter first name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-text-primary font-medium mb-2">
+                    <User className="w-4 h-4 inline mr-2" />
+                    Last Name
+                  </label>
+                  <input
+                    type="text"
+                    name="last_name"
+                    value={formData.last_name}
+                    onChange={handleChange}
+                    required
+                    className="input-field w-full"
+                    placeholder="Enter last name"
+                  />
+                </div>
               </div>
 
               <div>
@@ -156,61 +167,32 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
               <div>
                 <label className="block text-text-primary font-medium mb-2">
                   <Briefcase className="w-4 h-4 inline mr-2" />
-                  Position
+                  Job Title
                 </label>
                 <input
                   type="text"
-                  name="position"
-                  value={formData.position}
+                  name="job_title"
+                  value={formData.job_title}
                   onChange={handleChange}
                   required
                   className="input-field w-full"
-                  placeholder="Enter position"
-                />
-              </div>
-
-              <div>
-                <label className="block text-text-primary font-medium mb-2">
-                  <DollarSign className="w-4 h-4 inline mr-2" />
-                  Salary
-                </label>
-                <input
-                  type="number"
-                  name="salary"
-                  value={formData.salary}
-                  onChange={handleChange}
-                  required
-                  className="input-field w-full"
-                  placeholder="Enter salary"
+                  placeholder="Enter job title"
                 />
               </div>
 
               <div>
                 <label className="block text-text-primary font-medium mb-2">
                   <Calendar className="w-4 h-4 inline mr-2" />
-                  Hire Date
+                  Start Date
                 </label>
                 <input
                   type="date"
-                  name="hire_date"
-                  value={formData.hire_date}
+                  name="start_date"
+                  value={formData.start_date}
                   onChange={handleChange}
                   required
                   className="input-field w-full"
                 />
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="is_active"
-                  checked={formData.is_active}
-                  onChange={(e) => setFormData(prev => ({ ...prev, is_active: e.target.checked }))}
-                  className="w-4 h-4 text-accent-500 bg-background-secondary border-white/10 rounded focus:ring-accent-500"
-                />
-                <label htmlFor="is_active" className="text-text-primary font-medium">
-                  Active Employee
-                </label>
               </div>
 
               <div className="flex space-x-4 pt-4">

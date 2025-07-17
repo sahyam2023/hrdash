@@ -1,9 +1,13 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { mockNewHireData } from '../services/api';
+import { NewHireData } from '../services/api';
 
-const NewHiresChart: React.FC = () => {
+interface NewHiresChartProps {
+  data: NewHireData[];
+}
+
+const NewHiresChart: React.FC<NewHiresChartProps> = ({ data }) => {
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
@@ -16,6 +20,10 @@ const NewHiresChart: React.FC = () => {
     return null;
   };
 
+  if (!data || data.length === 0) {
+    return <div className="bg-background-tertiary rounded-xl p-6 border border-white/10 h-96 animate-pulse" />;
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
@@ -26,7 +34,7 @@ const NewHiresChart: React.FC = () => {
       <h3 className="text-xl font-semibold text-text-primary mb-6">New Hires Over Time</h3>
       <div className="h-80">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={mockNewHireData}>
+          <AreaChart data={data}>
             <defs>
               <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8} />
