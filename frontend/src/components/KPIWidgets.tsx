@@ -1,34 +1,48 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Users, UserCheck, Building2, DollarSign } from 'lucide-react';
-import { mockKPIData } from '../services/api';
+import { KPIData } from '../services/api';
 
-const KPIWidgets: React.FC = () => {
+interface KPIWidgetsProps {
+  data: KPIData | null;
+}
+
+const KPIWidgets: React.FC<KPIWidgetsProps> = ({ data }) => {
+  if (!data) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div key={index} className="bg-background-tertiary rounded-xl p-6 border border-white/10 h-36 animate-pulse" />
+        ))}
+      </div>
+    );
+  }
+
   const widgets = [
     {
       title: 'Total Employees',
-      value: mockKPIData.total_employees.toLocaleString(),
+      value: data.totalEmployees.toLocaleString(),
       icon: Users,
       color: 'from-blue-500 to-blue-600',
       bgIcon: 'text-blue-500/20',
     },
     {
-      title: 'Active Employees',
-      value: mockKPIData.active_employees.toLocaleString(),
+      title: 'New Hires (30d)',
+      value: data.newHires.toLocaleString(),
       icon: UserCheck,
       color: 'from-green-500 to-green-600',
       bgIcon: 'text-green-500/20',
     },
     {
-      title: 'Departments',
-      value: mockKPIData.departments.toString(),
+      title: 'Departures (30d)',
+      value: data.departures.toLocaleString(),
       icon: Building2,
       color: 'from-purple-500 to-purple-600',
       bgIcon: 'text-purple-500/20',
     },
     {
-      title: 'Average Salary',
-      value: `$${mockKPIData.avg_salary.toLocaleString()}`,
+      title: 'Active Employees',
+      value: (data.totalEmployees - data.departures).toLocaleString(),
       icon: DollarSign,
       color: 'from-accent-500 to-accent-600',
       bgIcon: 'text-accent-500/20',

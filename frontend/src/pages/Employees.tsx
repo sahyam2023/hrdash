@@ -1,23 +1,38 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Search, Filter } from 'lucide-react';
 import EmployeeTable from '../components/EmployeeTable';
 import EmployeeModal from '../components/EmployeeModal';
-import { Employee, mockEmployees } from '../services/api';
+import { Employee, employeeAPI } from '../services/api';
+import { useDebounce } from '../hooks/useDebounce';
 
 const Employees: React.FC = () => {
-  const [employees, setEmployees] = useState<Employee[]>(mockEmployees);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDepartment, setFilterDepartment] = useState('');
+  const [pagination, setPagination] = useState({ page: 1, limit: 10, totalPages: 1 });
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  const filteredEmployees = employees.filter(employee => {
-    const matchesSearch = employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         employee.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDepartment = filterDepartment === '' || employee.department === filterDepartment;
-    return matchesSearch && matchesDepartment;
-  });
+  const fetchEmployees = useCallback(async () => {
+    try {
+      const response = await employeeAPI.getEmployees({
+        page: pagination.page,
+        limit: pagination.limit,
+        search: debouncedSearchTerm,
+        department: filterDepartment,
+      });
+      setEmployees(response.data.data);
+      setPagination(prev => ({ ...prev, totalPages: response.data.pagination.totalPages }));
+    } catch (error) {
+      console.error("Failed to fetch employees:", error);
+    }
+  }, [pagination.page, pagination.limit, debouncedSearchTerm, filterDepartment]);
+
+  useEffect(() => {
+    fetchEmployees();
+  }, [fetchEmployees]);
 
   const departments = [...new Set(employees.map(emp => emp.department))];
 
@@ -31,29 +46,27 @@ const Employees: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleSaveEmployee = (employeeData: Omit<Employee, 'id'>) => {
-    if (selectedEmployee) {
-      // Update existing employee
-      setEmployees(prev => prev.map(emp => 
-        emp.id === selectedEmployee.id 
-          ? { ...emp, ...employeeData }
-          : emp
-      ));
-    } else {
-      // Add new employee
-      const newEmployee: Employee = {
-        ...employeeData,
-        id: Math.max(...employees.map(e => e.id)) + 1,
-      };
-      setEmployees(prev => [...prev, newEmployee]);
+  const handleSaveEmployee = async (employeeData: Omit<Employee, 'id'>) => {
+    try {
+      if (selectedEmployee) {
+        await employeeAPI.updateEmployee(selectedEmployee.id, employeeData);
+      } else {
+        await employeeAPI.createEmployee(employeeData);
+      }
+      fetchEmployees(); // Refresh data
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error("Failed to save employee:", error);
     }
-    setIsModalOpen(false);
   };
 
-  const handleDeactivateEmployee = (id: number) => {
-    setEmployees(prev => prev.map(emp => 
-      emp.id === id ? { ...emp, is_active: false } : emp
-    ));
+  const handleDeactivateEmployee = async (id: number) => {
+    try {
+      await employeeAPI.deactivateEmployee(id);
+      fetchEmployees(); // Refresh data
+    } catch (error) {
+      console.error("Failed to deactivate employee:", error);
+    }
   };
 
   return (
@@ -114,10 +127,28 @@ const Employees: React.FC = () => {
       </motion.div>
 
       <EmployeeTable
-        employees={filteredEmployees}
+        employees={employees}
         onEditEmployee={handleEditEmployee}
         onDeactivateEmployee={handleDeactivateEmployee}
       />
+
+      <div className="flex justify-between items-center mt-6">
+        <button
+          onClick={() => setPagination(p => ({ ...p, page: Math.max(1, p.page - 1) }))}
+          disabled={pagination.page === 1}
+          className="btn-secondary"
+        >
+          Previous
+        </button>
+        <span>Page {pagination.page} of {pagination.totalPages}</span>
+        <button
+          onClick={() => setPagination(p => ({ ...p, page: Math.min(p.totalPages, p.page + 1) }))}
+          disabled={pagination.page === pagination.totalPages}
+          className="btn-secondary"
+        >
+          Next
+        </button>
+      </div>
 
       <EmployeeModal
         isOpen={isModalOpen}

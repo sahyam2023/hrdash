@@ -2,43 +2,82 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Users, UserCheck, Building2, DollarSign, TrendingUp } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { mockKPIData, mockDepartmentData, mockNewHireData } from '../services/api';
-
-const COLORS = [
-  '#6366f1', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#84cc16'
-];
+import { dashboardAPI, KPIData, DepartmentBreakdown, NewHireData, employeeAPI } from '../services/api';
+import { useEffect, useState } from 'react';
+import KPIWidgets from '../components/KPIWidgets';
+import DepartmentChart from '../components/DepartmentChart';
+import NewHiresChart from '../components/NewHiresChart';
 
 const Dashboard: React.FC = () => {
-  const widgets = [
+  const [kpis, setKpis] = useState<KPIData | null>(null);
+  const [departmentData, setDepartmentData] = useState<DepartmentBreakdown[]>([]);
+  const [newHireData, setNewHireData] = useState<NewHireData[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const kpiResponse = await dashboardAPI.getKPIs();
+        setKpis(kpiResponse.data);
+
+        const departmentResponse = await dashboardAPI.getDepartmentBreakdown();
+        const total = departmentResponse.data.reduce((acc, item) => acc + item.count, 0);
+        const dataWithPercentage = departmentResponse.data.map(item => ({
+          ...item,
+          percentage: total > 0 ? parseFloat(((item.count / total) * 100).toFixed(2)) : 0,
+        }));
+        setDepartmentData(dataWithPercentage);
+
+        // Simulate new hire data
+        const employeeResponse = await employeeAPI.getEmployees({ limit: 1000 }); // Fetch all employees
+        const hiresByMonth: { [key: string]: number } = {};
+        employeeResponse.data.data.forEach(emp => {
+          const month = new Date(emp.start_date).toLocaleString('default', { month: 'short' });
+          hiresByMonth[month] = (hiresByMonth[month] || 0) + 1;
+        });
+        const newHires = Object.keys(hiresByMonth).map(month => ({
+          month,
+          count: hiresByMonth[month],
+        }));
+        setNewHireData(newHires);
+
+      } catch (error) {
+        console.error("Failed to fetch dashboard data:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const widgets = kpis ? [
     {
       title: 'Total Employees',
-      value: mockKPIData.total_employees.toLocaleString(),
+      value: kpis.totalEmployees.toLocaleString(),
       icon: Users,
       color: 'from-blue-500 to-blue-600',
       bgIcon: 'text-blue-500/20',
     },
     {
-      title: 'Active Employees',
-      value: mockKPIData.active_employees.toLocaleString(),
+      title: 'New Hires (30 days)',
+      value: kpis.newHires.toLocaleString(),
       icon: UserCheck,
       color: 'from-green-500 to-green-600',
       bgIcon: 'text-green-500/20',
     },
     {
-      title: 'Departments',
-      value: mockKPIData.departments.toString(),
+      title: 'Departures (30 days)',
+      value: kpis.departures.toLocaleString(),
       icon: Building2,
       color: 'from-purple-500 to-purple-600',
       bgIcon: 'text-purple-500/20',
     },
     {
-      title: 'Average Salary',
-      value: `$${mockKPIData.avg_salary.toLocaleString()}`,
+      title: 'Active Employees',
+      value: (kpis.totalEmployees - kpis.departures).toLocaleString(),
       icon: DollarSign,
       color: 'from-accent-500 to-accent-600',
       bgIcon: 'text-accent-500/20',
     },
-  ];
+  ] : [];
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
@@ -108,88 +147,8 @@ const Dashboard: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Department Chart */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="bg-background-tertiary rounded-xl p-6 border border-white/10 card-hover"
-        >
-          <h3 className="text-xl font-semibold text-text-primary mb-6">Department Distribution</h3>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={mockDepartmentData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={120}
-                  paddingAngle={2}
-                  dataKey="count"
-                >
-                  {mockDepartmentData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip content={<CustomTooltip />} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
-            {mockDepartmentData.map((item, index) => (
-              <div key={item.department} className="flex items-center space-x-2">
-                <div
-                  className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                />
-                <span className="text-text-secondary">{item.department}</span>
-                <span className="text-text-primary font-medium ml-auto">{item.count}</span>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* New Hires Chart */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="bg-background-tertiary rounded-xl p-6 border border-white/10 card-hover"
-        >
-          <h3 className="text-xl font-semibold text-text-primary mb-6">New Hires Over Time</h3>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={mockNewHireData}>
-                <defs>
-                  <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis 
-                  dataKey="month" 
-                  stroke="#8B949E"
-                  fontSize={12}
-                />
-                <YAxis 
-                  stroke="#8B949E"
-                  fontSize={12}
-                />
-                <Tooltip content={<CustomAreaTooltip />} />
-                <Area
-                  type="monotone"
-                  dataKey="count"
-                  stroke="#6366f1"
-                  fillOpacity={1}
-                  fill="url(#colorGradient)"
-                  strokeWidth={2}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </motion.div>
+        <DepartmentChart data={departmentData} />
+        <NewHiresChart data={newHireData} />
       </div>
 
       {/* Recent Activity */}

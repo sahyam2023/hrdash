@@ -63,11 +63,11 @@ const EmployeeTable: React.FC<EmployeeTableProps> = ({
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-gradient-to-r from-accent-500 to-accent-600 rounded-full flex items-center justify-center">
                       <span className="text-white font-medium text-sm">
-                        {employee.name.split(' ').map(n => n[0]).join('')}
+                        {employee.first_name[0]}{employee.last_name[0]}
                       </span>
                     </div>
                     <div>
-                      <p className="text-text-primary font-medium">{employee.name}</p>
+                      <p className="text-text-primary font-medium">{employee.first_name} {employee.last_name}</p>
                       <div className="flex items-center space-x-1 text-text-secondary text-sm">
                         <Mail className="w-3 h-3" />
                         <span>{employee.email}</span>
@@ -80,17 +80,11 @@ const EmployeeTable: React.FC<EmployeeTableProps> = ({
                     {employee.department}
                   </span>
                 </td>
-                <td className="p-6 text-text-primary">{employee.position}</td>
-                <td className="p-6">
-                  <div className="flex items-center space-x-1 text-text-primary font-medium">
-                    <DollarSign className="w-4 h-4" />
-                    <span>{formatSalary(employee.salary)}</span>
-                  </div>
-                </td>
+                <td className="p-6 text-text-primary">{employee.job_title}</td>
                 <td className="p-6">
                   <div className="flex items-center space-x-1 text-text-secondary">
                     <Calendar className="w-4 h-4" />
-                    <span>{formatDate(employee.hire_date)}</span>
+                    <span>{formatDate(employee.start_date)}</span>
                   </div>
                 </td>
                 <td className="p-6">
