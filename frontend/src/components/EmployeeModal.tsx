@@ -7,7 +7,7 @@ interface EmployeeModalProps {
   isOpen: boolean;
   onClose: () => void;
   employee: Employee | null;
-  onSave: (employee: Omit<Employee, 'id'>) => Promise<void>;
+  onSave: (employee: Omit<Employee, 'id'>) => Promise<Employee>;
 }
 
 const EmployeeModal: React.FC<EmployeeModalProps> = ({
@@ -70,7 +70,7 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
     try {
       await onSave(formData);
     } catch (error: any) {
-      if (error.response && error.response.status === 409) {
+      if (error.response && error.response.data && error.response.data.error) {
         setErrorMessage(error.response.data.error);
       } else {
         setErrorMessage('An unexpected error occurred. Please try again.');

@@ -23,10 +23,12 @@ const EmployeeTable: React.FC<EmployeeTableProps> = ({
   };
 
   const formatSalary = (salary: number) => {
-    return new Intl.NumberFormat('en-US', {
+    // Format salary in Indian Rupees (INR)
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'INR',
       minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(salary);
   };
 
@@ -81,11 +83,8 @@ const EmployeeTable: React.FC<EmployeeTableProps> = ({
                   </span>
                 </td>
                 <td className="p-6 text-text-primary">{employee.job_title}</td>
-                <td className="p-6">
-                  <div className="flex items-center space-x-1 text-text-secondary">
-                    <DollarSign className="w-4 h-4" />
-                    <span>{formatSalary(employee.salary)}</span>
-                  </div>
+                <td className="p-6 text-text-primary">
+                  {formatSalary(employee.salary)}
                 </td>
                 <td className="p-6">
                   <div className="flex items-center space-x-1 text-text-secondary">
