@@ -33,6 +33,18 @@ def create_database_table():
             is_active BOOLEAN NOT NULL DEFAULT 1
         )
     """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS departments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE
+        )
+    """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS job_titles (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE
+        )
+    """)
     conn.commit()
     conn.close()
     print("Table check complete.")

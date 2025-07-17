@@ -5,6 +5,8 @@ import { Toaster } from 'react-hot-toast';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Employees from './pages/Employees';
+import Settings from './pages/Settings';
+import Analytics from './pages/Analytics';
 import { SocketProvider } from './context/SocketContext';
 
 function App() {
@@ -21,6 +23,8 @@ function App() {
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/employees" element={<Employees />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/analytics" element={<Analytics />} />
             </Routes>
           </Layout>
           <Toaster
