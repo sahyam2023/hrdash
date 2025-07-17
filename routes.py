@@ -1,11 +1,13 @@
 # hrdash/routes.py
 
-from flask import request, jsonify, Blueprint, current_app
+from flask import request as flask_request, jsonify, Blueprint, current_app
 from datetime import datetime, timedelta
 import sqlite3
 import re
 from database import get_db_connection
 from flask_socketio import emit
+from extensions import socketio
+from flask import request
 
 # Import the socketio instance from the new extensions.py file
 # This is the key fix that resolves the circular import error.
@@ -107,7 +109,7 @@ def add_employee():
         # Fetch the newly created employee from the database
         created_employee = conn.execute('SELECT * FROM employees WHERE id = ?', (new_id,)).fetchone()
 
-        # Emit a socket event to notify all connected clients
+        # Emit a socket event to all clients, including the sender
         socketio.emit('employee_added', dict(created_employee))
         return jsonify(dict(created_employee)), 201
         
@@ -169,7 +171,7 @@ def update_employee(employee_id):
         # Fetch the updated employee data to return
         updated_employee = cursor.execute('SELECT * FROM employees WHERE id = ?', (employee_id,)).fetchone()
 
-        # Emit a socket event to notify all connected clients
+        # Emit a socket event to all clients, including the sender
         socketio.emit('employee_updated', dict(updated_employee))
         return jsonify(dict(updated_employee))
 
