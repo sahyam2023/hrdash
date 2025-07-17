@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import TurnoverChart from '../components/TurnoverChart';
 import SalaryDistributionChart from '../components/SalaryDistributionChart';
-import { api } from '../services/api';
+import api from '../services/api';
 
 interface TurnoverData {
   month: string;

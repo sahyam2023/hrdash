@@ -285,13 +285,13 @@ def handle_disconnect():
 def get_salary_distribution():
     """Returns salary distribution data."""
     conn = get_db_connection()
-    # Define salary ranges
+    # Define salary ranges in Rupees
     ranges = [
-        (0, 50000),
-        (50001, 75000),
-        (75001, 100000),
-        (100001, 150000),
-        (150001, 9999999)
+        (0, 500000),
+        (500001, 1000000),
+        (1000001, 2000000),
+        (2000001, 4000000),
+        (4000001, 99999999)
     ]
 
     results = []
@@ -301,9 +301,9 @@ def get_salary_distribution():
             (r[0], r[1])
         ).fetchone()[0]
 
-        range_label = f"${r[0]/1000:.0f}k-${r[1]/1000:.0f}k"
-        if r[1] > 200000:
-            range_label = f">${r[0]/1000:.0f}k"
+        range_label = f"₹{r[0]/100000:.1f}L - ₹{r[1]/100000:.1f}L"
+        if r[1] > 4000000:
+            range_label = f"> ₹{r[0]/100000:.1f}L"
 
         results.append({"range": range_label, "count": count})
 

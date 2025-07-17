@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { api } from '../services/api';
+import api from '../services/api';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useSocket } from '../context/SocketContext';
 
 interface JobTitle {
   id: number;
@@ -9,6 +11,7 @@ interface JobTitle {
 const JobTitleList: React.FC = () => {
   const [jobTitles, setJobTitles] = useState<JobTitle[]>([]);
   const [newJobTitle, setNewJobTitle] = useState('');
+  const { socket } = useSocket();
 
   useEffect(() => {
     fetchJobTitles();
@@ -26,9 +29,13 @@ const JobTitleList: React.FC = () => {
   const addJobTitle = async () => {
     if (newJobTitle.trim() === '') return;
     try {
-      await api.post('/api/job-titles', { name: newJobTitle });
+      const response = await api.post('/api/job-titles', { name: newJobTitle });
+      const newJob = response.data;
+      setJobTitles([...jobTitles, newJob]);
       setNewJobTitle('');
-      fetchJobTitles();
+      if (socket) {
+        socket.emit('job_title_added', newJob);
+      }
     } catch (error) {
       console.error('Error adding job title:', error);
     }
@@ -37,7 +44,10 @@ const JobTitleList: React.FC = () => {
   const deleteJobTitle = async (id: number) => {
     try {
       await api.delete(`/api/job-titles/${id}`);
-      fetchJobTitles();
+      setJobTitles(jobTitles.filter(j => j.id !== id));
+      if (socket) {
+        socket.emit('job_title_deleted', { id });
+      }
     } catch (error) {
       console.error('Error deleting job title:', error);
     }
@@ -58,14 +68,22 @@ const JobTitleList: React.FC = () => {
         </button>
       </div>
       <ul>
-        {jobTitles.map((job) => (
-          <li key={job.id} className="flex justify-between items-center bg-background-secondary p-2 rounded-md mb-2">
-            <span>{job.name}</span>
-            <button onClick={() => deleteJobTitle(job.id)} className="text-red-500">
-              Delete
-            </button>
-          </li>
-        ))}
+        <AnimatePresence>
+          {jobTitles.map((job) => (
+            <motion.li
+              key={job.id}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              className="flex justify-between items-center bg-background-secondary p-2 rounded-md mb-2"
+            >
+              <span>{job.name}</span>
+              <button onClick={() => deleteJobTitle(job.id)} className="text-red-500">
+                Delete
+              </button>
+            </motion.li>
+          ))}
+        </AnimatePresence>
       </ul>
     </div>
   );

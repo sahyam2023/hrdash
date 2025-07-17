@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { api } from '../services/api';
+import api from '../services/api';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useSocket } from '../context/SocketContext';
 
 interface Department {
   id: number;
@@ -9,6 +11,7 @@ interface Department {
 const DepartmentList: React.FC = () => {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [newDepartment, setNewDepartment] = useState('');
+  const { socket } = useSocket();
 
   useEffect(() => {
     fetchDepartments();
@@ -23,12 +26,16 @@ const DepartmentList: React.FC = () => {
     }
   };
 
-  const addDepartment = async () => {
+  const addDepartment = async (). => {
     if (newDepartment.trim() === '') return;
     try {
-      await api.post('/api/departments', { name: newDepartment });
+      const response = await api.post('/api/departments', { name: newDepartment });
+      const newDept = response.data;
+      setDepartments([...departments, newDept]);
       setNewDepartment('');
-      fetchDepartments();
+      if (socket) {
+        socket.emit('department_added', newDept);
+      }
     } catch (error) {
       console.error('Error adding department:', error);
     }
@@ -37,7 +44,10 @@ const DepartmentList: React.FC = () => {
   const deleteDepartment = async (id: number) => {
     try {
       await api.delete(`/api/departments/${id}`);
-      fetchDepartments();
+      setDepartments(departments.filter(d => d.id !== id));
+      if (socket) {
+        socket.emit('department_deleted', { id });
+      }
     } catch (error) {
       console.error('Error deleting department:', error);
     }
@@ -58,14 +68,22 @@ const DepartmentList: React.FC = () => {
         </button>
       </div>
       <ul>
-        {departments.map((dept) => (
-          <li key={dept.id} className="flex justify-between items-center bg-background-secondary p-2 rounded-md mb-2">
-            <span>{dept.name}</span>
-            <button onClick={() => deleteDepartment(dept.id)} className="text-red-500">
-              Delete
-            </button>
-          </li>
-        ))}
+        <AnimatePresence>
+          {departments.map((dept) => (
+            <motion.li
+              key={dept.id}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              className="flex justify-between items-center bg-background-secondary p-2 rounded-md mb-2"
+            >
+              <span>{dept.name}</span>
+              <button onClick={() => deleteDepartment(dept.id)} className="text-red-500">
+                Delete
+              </button>
+            </motion.li>
+          ))}
+        </AnimatePresence>
       </ul>
     </div>
   );

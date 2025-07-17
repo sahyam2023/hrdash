@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, User, Mail, Building, Briefcase, Calendar } from 'lucide-react';
 import { Employee } from '../services/api';
+import { useSocket } from '../context/SocketContext';
 
 interface EmployeeModalProps {
   isOpen: boolean;
@@ -27,14 +28,50 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
     salary: 0,
   });
 
-  const departments = [
-    'Engineering',
-    'Sales',
-    'Marketing',
-    'HR',
-    'Finance',
-    'Operations',
-  ];
+  const [departments, setDepartments] = useState<string[]>([]);
+  const [jobTitles, setJobTitles] = useState<string[]>([]);
+  const { socket } = useSocket();
+
+  useEffect(() => {
+    // Fetch initial departments and job titles
+    const fetchInitialData = async () => {
+      try {
+        const deptsRes = await api.get('/api/departments');
+        setDepartments(deptsRes.data.map((d: any) => d.name));
+        const jobsRes = await api.get('/api/job-titles');
+        setJobTitles(jobsRes.data.map((j: any) => j.name));
+      } catch (error) {
+        console.error("Error fetching initial data", error);
+      }
+    };
+    fetchInitialData();
+
+    if (socket) {
+      socket.on('department_added', (newDept: { name: string }) => {
+        setDepartments(prev => [...prev, newDept.name]);
+      });
+      socket.on('department_deleted', (deletedDept: { id: number }) => {
+        // This is tricky without the name. We might need to refetch or get the name from the backend.
+        // For now, let's refetch.
+        fetchInitialData();
+      });
+      socket.on('job_title_added', (newJob: { name: string }) => {
+        setJobTitles(prev => [...prev, newJob.name]);
+      });
+      socket.on('job_title_deleted', (deletedJob: { id: number }) => {
+        fetchInitialData();
+      });
+    }
+
+    return () => {
+      if (socket) {
+        socket.off('department_added');
+        socket.off('department_deleted');
+        socket.off('job_title_added');
+        socket.off('job_title_deleted');
+      }
+    };
+  }, [socket]);
 
   useEffect(() => {
     if (employee) {
@@ -191,15 +228,18 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
                   <Briefcase className="w-4 h-4 inline mr-2" />
                   Job Title
                 </label>
-                <input
-                  type="text"
+                <select
                   name="job_title"
                   value={formData.job_title}
                   onChange={handleChange}
                   required
                   className="input-field w-full"
-                  placeholder="Enter job title"
-                />
+                >
+                  <option value="">Select job title</option>
+                  {jobTitles.map(title => (
+                    <option key={title} value={title}>{title}</option>
+                  ))}
+                </select>
               </div>
 
               <div>
