@@ -72,7 +72,6 @@ def get_employees():
     # Get the paginated results
     results_query = f"SELECT * {base_query} ORDER BY first_name, last_name LIMIT ? OFFSET ?"
     employees = conn.execute(results_query, params + [limit, offset]).fetchall()
-    conn.close()
 
     return jsonify({
         'data': [dict(row) for row in employees],
@@ -104,7 +103,6 @@ def add_employee():
                        (data['first_name'], data['last_name'], data['email'], data['job_title'], data['department'], data['start_date'], data['salary'], data.get('is_active', 1)))
         conn.commit()
         new_id = cursor.lastrowid
-        conn.close()
         
         created_employee = {**data, "id": new_id, "is_active": 1}
         # Emit a socket event to notify all connected clients
@@ -122,7 +120,6 @@ def get_employee(employee_id):
     """Fetches a single employee by their ID."""
     conn = get_db_connection()
     employee = conn.execute('SELECT * FROM employees WHERE id = ?', (employee_id,)).fetchone()
-    conn.close()
     if employee is None:
         return jsonify({'error': 'Employee not found'}), 404
     return jsonify(dict(employee))
@@ -135,7 +132,6 @@ def update_employee(employee_id):
     conn.execute("UPDATE employees SET first_name = ?, last_name = ?, email = ?, job_title = ?, department = ?, salary = ? WHERE id = ?",
                  (data['first_name'], data['last_name'], data['email'], data['job_title'], data['department'], data['salary'], employee_id))
     conn.commit()
-    conn.close()
     socketio.emit('employee_updated', {'id': employee_id})
     return jsonify({'message': 'Employee updated successfully'})
 
@@ -146,7 +142,6 @@ def deactivate_employee(employee_id):
     conn = get_db_connection()
     conn.execute("UPDATE employees SET is_active = 0, end_date = ? WHERE id = ?", (end_date, employee_id))
     conn.commit()
-    conn.close()
     socketio.emit('employee_deactivated', {'id': employee_id})
     return jsonify({'message': f'Employee {employee_id} deactivated'})
 
@@ -158,7 +153,6 @@ def get_kpis():
     thirty_days_ago = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
     new_hires = conn.execute('SELECT COUNT(*) FROM employees WHERE start_date >= ?', (thirty_days_ago,)).fetchone()[0]
     departures = conn.execute('SELECT COUNT(*) FROM employees WHERE is_active = 0 AND end_date >= ?', (thirty_days_ago,)).fetchone()[0]
-    conn.close()
     return jsonify({"totalEmployees": total_employees, "newHires": new_hires, "departures": departures})
 
 @api_bp.route('/dashboard/department-breakdown', methods=['GET'])
@@ -166,7 +160,6 @@ def get_department_breakdown():
     """Returns the count of employees per department."""
     conn = get_db_connection()
     breakdown = conn.execute("SELECT department, COUNT(*) as count FROM employees WHERE is_active = 1 GROUP BY department").fetchall()
-    conn.close()
     return jsonify([dict(row) for row in breakdown])
 
 @api_bp.route('/departments', methods=['GET'])
@@ -174,7 +167,6 @@ def get_departments():
     """Fetches all departments."""
     conn = get_db_connection()
     departments = conn.execute("SELECT * FROM departments").fetchall()
-    conn.close()
     return jsonify([dict(row) for row in departments])
 
 @api_bp.route('/departments', methods=['POST'])
@@ -189,7 +181,6 @@ def add_department():
         cursor.execute("INSERT INTO departments (name) VALUES (?)", (data['name'],))
         conn.commit()
         new_id = cursor.lastrowid
-        conn.close()
         new_department = {'id': new_id, 'name': data['name']}
         socketio.emit('department_added', new_department)
         return jsonify(new_department), 201
@@ -202,7 +193,6 @@ def delete_department(department_id):
     conn = get_db_connection()
     conn.execute("DELETE FROM departments WHERE id = ?", (department_id,))
     conn.commit()
-    conn.close()
     socketio.emit('department_deleted', {'id': department_id})
     return jsonify({'message': 'Department deleted successfully'})
 
@@ -211,7 +201,6 @@ def get_job_titles():
     """Fetches all job titles."""
     conn = get_db_connection()
     job_titles = conn.execute("SELECT * FROM job_titles").fetchall()
-    conn.close()
     return jsonify([dict(row) for row in job_titles])
 
 @api_bp.route('/job-titles', methods=['POST'])
@@ -226,7 +215,6 @@ def add_job_title():
         cursor.execute("INSERT INTO job_titles (name) VALUES (?)", (data['name'],))
         conn.commit()
         new_id = cursor.lastrowid
-        conn.close()
         new_job_title = {'id': new_id, 'name': data['name']}
         socketio.emit('job_title_added', new_job_title)
         return jsonify(new_job_title), 201
@@ -239,7 +227,6 @@ def delete_job_title(job_title_id):
     conn = get_db_connection()
     conn.execute("DELETE FROM job_titles WHERE id = ?", (job_title_id,))
     conn.commit()
-    conn.close()
     socketio.emit('job_title_deleted', {'id': job_title_id})
     return jsonify({'message': 'Job title deleted successfully'})
 
@@ -264,8 +251,6 @@ def get_turnover_data():
         GROUP BY month
         ORDER BY month
     """).fetchall()
-
-    conn.close()
 
     return jsonify({
         'hires': [dict(row) for row in hires],
@@ -314,5 +299,4 @@ def get_salary_distribution():
 
         results.append({"range": range_label, "count": count})
 
-    conn.close()
     return jsonify(results)

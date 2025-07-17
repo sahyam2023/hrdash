@@ -119,8 +119,8 @@ const Employees: React.FC = () => {
             className="input-field pl-10 pr-8 appearance-none"
           >
             <option value="">All Departments</option>
-            {departments.map(dept => (
-              <option key={dept} value={dept}>{dept}</option>
+            {departments.map((dept, index) => (
+              <option key={index} value={dept}>{dept}</option>
             ))}
           </select>
         </div>

@@ -63,7 +63,7 @@ const EmployeeTable: React.FC<EmployeeTableProps> = ({
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-gradient-to-r from-accent-500 to-accent-600 rounded-full flex items-center justify-center">
                       <span className="text-white font-medium text-sm">
-                        {employee.first_name[0]}{employee.last_name[0]}
+                        {employee.first_name && employee.first_name[0]}{employee.last_name && employee.last_name[0]}
                       </span>
                     </div>
                     <div>
@@ -81,6 +81,12 @@ const EmployeeTable: React.FC<EmployeeTableProps> = ({
                   </span>
                 </td>
                 <td className="p-6 text-text-primary">{employee.job_title}</td>
+                <td className="p-6">
+                  <div className="flex items-center space-x-1 text-text-secondary">
+                    <DollarSign className="w-4 h-4" />
+                    <span>{formatSalary(employee.salary)}</span>
+                  </div>
+                </td>
                 <td className="p-6">
                   <div className="flex items-center space-x-1 text-text-secondary">
                     <Calendar className="w-4 h-4" />

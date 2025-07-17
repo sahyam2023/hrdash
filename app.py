@@ -33,11 +33,15 @@ def create_app(config_name='development'):
     cors.init_app(app, resources={r"/api/*": {"origins": "*"}})
     socketio.init_app(app, cors_allowed_origins="*")
 
-    # --- 3. Database Initialization ---
-    # By running this within the app context, we ensure the app is fully
-    # configured before any database operations are performed.
+    # --- 3. Database Initialization and Teardown ---
+    # The 'create_database_table' function sets up the DB schema if it doesn't exist.
+    # The 'close_db' function is registered as a 'teardown' function, which means
+    # Flask will automatically call it to close the database connection after each request.
+    # This is a robust pattern for managing resources like database connections.
+    from database import close_db
     with app.app_context():
         create_database_table()
+    app.teardown_appcontext(close_db)
 
     # --- 4. Register Blueprints ---
     # Blueprints are imported here, inside the factory, to prevent

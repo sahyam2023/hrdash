@@ -44,7 +44,7 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
         email: employee.email,
         department: employee.department,
         job_title: employee.job_title,
-        start_date: employee.start_date,
+        start_date: new Date(employee.start_date).toISOString().split('T')[0],
         is_active: employee.is_active,
         salary: employee.salary,
       });
